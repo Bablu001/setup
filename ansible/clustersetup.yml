@@ -1,0 +1,22 @@
+eksctl create cluster --name=wanderlust \
+                    --region=ap-south-1 \
+                    --version=1.32 \
+                    --without-nodegroup
+
+eksctl utils associate-iam-oidc-provider \
+  --region ap-south-1 \
+  --cluster wanderlust \
+  --approve
+
+eksctl create nodegroup --cluster=wanderlust \
+                     --region=ap-south-1 \
+                     --name=wanderlust \
+                     --node-type=t2.large \
+                     --nodes=2 \
+                     --nodes-min=2 \
+                     --nodes-max=2 \
+                     --node-volume-size=29 \
+                     --ssh-access \
+                     --ssh-public-key=eks-nodegroup-key
+
+## create key pair name with 'eks-nodegroup-key' in aws account.

@@ -1,0 +1,35 @@
+---
+- name: Install Docker on master
+  hosts: master
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install docker.io package
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Ensure docker group exists
+      group:
+        name: docker
+        state: present
+
+    - name: Add current user to docker group using usermod
+      shell: "usermod -aG docker {{ ansible_user }}"
+      become: true
+
+    - name: Restart Docker to apply group changes
+      service:
+        name: docker
+        state: restarted
+
+    - name: Refresh group membership for current user (newgrp docker equivalent)
+      shell: "newgrp docker"
+      args:
+        executable: /bin/bash
+      become_user: "{{ ansible_user }}"
+      when: ansible_env.SHELL is defined

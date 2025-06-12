@@ -1,0 +1,12 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Sensitive keys
+*.pem
+*.key
+*.env
+
+# VSCode settings (optional)
+.vscode/

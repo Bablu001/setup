@@ -1,0 +1,41 @@
+- name: Install and Configure ArgoCD on Master Machine
+  hosts: master
+  become: yes
+  tasks:
+    - name: Create argocd namespace
+      command: kubectl create namespace argocd
+      register: ns_result
+      failed_when: ns_result.rc != 0 and "AlreadyExists" not in ns_result.stderr
+
+    - name: Apply ArgoCD manifests
+      command: kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+    - name: Wait for all ArgoCD pods to be ready
+      shell: kubectl wait --for=condition=ready pod --all -n argocd --timeout=300s
+      register: wait_pods
+      retries: 10
+      delay: 30
+      until: wait_pods.rc == 0
+
+    - name: Download ArgoCD CLI binary
+      get_url:
+        url: https://github.com/argoproj/argo-cd/releases/download/v2.4.7/argocd-linux-amd64
+        dest: /usr/local/bin/argocd
+        mode: '0755'
+
+    - name: Verify ArgoCD services
+      command: kubectl get svc -n argocd
+      register: svc_info
+
+    - debug:
+        msg: "{{ svc_info.stdout }}"
+
+    - name: Show ArgoCD initial admin password
+      shell: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+      register: argocd_password
+
+    - debug:
+        msg: "ArgoCD initial admin password: {{ argocd_password.stdout }}"
+
+    - debug:
+        msg: "To expose the ArgoCD server, run this command manually: kubectl patch svc argocd-server -n argocd -p '{\"spec\": {\"type\": \"NodePort\"}}'"

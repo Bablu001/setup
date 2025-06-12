@@ -1,0 +1,38 @@
+- name: Install eksctl on master
+  hosts: master
+  become: true
+
+  tasks:
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+        update_cache: yes
+
+    - name: Download eksctl tarball
+      get_url:
+        url: "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_{{ ansible_system }}_amd64.tar.gz"
+        dest: /tmp/eksctl.tar.gz
+        mode: '0644'
+
+    - name: Extract eksctl binary
+      unarchive:
+        src: /tmp/eksctl.tar.gz
+        dest: /tmp/
+        remote_src: yes
+        creates: /tmp/eksctl
+
+    - name: Move eksctl binary to /usr/local/bin
+      copy:
+        src: /tmp/eksctl
+        dest: /usr/local/bin/eksctl
+        remote_src: yes
+        mode: '0755'
+
+    - name: Verify eksctl installation
+      command: eksctl version
+      register: eksctl_version
+
+    - name: Show eksctl version
+      debug:
+        msg: "Installed eksctl version: {{ eksctl_version.stdout }}"

@@ -1,0 +1,25 @@
+- name: Install kubectl on master
+  hosts: master
+  become: true
+
+  tasks:
+    - name: Download kubectl binary
+      get_url:
+        url: https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+        dest: /tmp/kubectl
+        mode: '0755'
+
+    - name: Move kubectl to /usr/local/bin
+      copy:
+        src: /tmp/kubectl
+        dest: /usr/local/bin/kubectl
+        remote_src: yes
+        mode: '0755'
+
+    - name: Verify kubectl installation
+      command: kubectl version --short --client
+      register: kubectl_output
+
+    - name: Show kubectl version
+      debug:
+        msg: "{{ kubectl_output.stdout }}"

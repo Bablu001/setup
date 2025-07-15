@@ -1,5 +1,7 @@
-- name: Install Docker on Ubuntu (run as root)
+- name: Install Docker on Ubuntu (and configure for Jenkins user)
   hosts: master
+  become: true  # run all tasks with sudo/root privileges
+
   tasks:
     - name: Update apt cache
       apt:
@@ -41,12 +43,18 @@
         state: started
         enabled: yes
 
-    - name: Add root user to docker group (optional for root)
+    - name: Add root user to docker group (optional)
       user:
         name: root
         groups: docker
         append: yes
 
-    - name: Print message
+    - name: Add jenkins user to docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+
+    - name: Print success message
       debug:
-        msg: "Docker installed and running as root."
+        msg: "✅ Docker installed and configured for both root and jenkins users."

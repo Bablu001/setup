@@ -1,34 +1,52 @@
-- name: Install Docker on master
+- name: Install Docker on Ubuntu (run as root)
   hosts: master
-  become: true
-
   tasks:
     - name: Update apt cache
       apt:
         update_cache: yes
+        cache_valid_time: 3600
 
-    - name: Install docker.io package
+    - name: Install required packages
       apt:
-        name: docker.io
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
         state: present
 
-    - name: Ensure docker group exists
-      group:
-        name: docker
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
-    - name: Add current user to docker group using usermod
-      shell: "usermod -aG docker {{ ansible_user_id }}"
-      become: true
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+        state: present
+        filename: docker
 
-    - name: Restart Docker to apply group changes
+    - name: Update apt cache after adding Docker repo
+      apt:
+        update_cache: yes
+
+    - name: Install Docker CE
+      apt:
+        name: docker-ce
+        state: latest
+
+    - name: Ensure Docker is running
       service:
         name: docker
-        state: restarted
+        state: started
+        enabled: yes
 
-    - name: Refresh group membership for current user (newgrp docker equivalent)
-      shell: "newgrp docker"
-      args:
-        executable: /bin/bash
-      become_user: "{{ ansible_user_id }}"
-      when: ansible_env.SHELL is defined
+    - name: Add root user to docker group (optional for root)
+      user:
+        name: root
+        groups: docker
+        append: yes
+
+    - name: Print message
+      debug:
+        msg: "Docker installed and running as root."

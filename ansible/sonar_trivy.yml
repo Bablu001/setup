@@ -1,14 +1,40 @@
-- name: Install and configure SonarQube on Master
+- name: Install Docker CE and run SonarQube
   hosts: master
   become: yes
   tasks:
-    - name: Ensure Docker is installed
+    - name: Install dependencies
       apt:
-        name: docker.io
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
         state: present
         update_cache: yes
 
-    - name: Start Docker service
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Docker CE
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: latest
+
+    - name: Enable and start Docker
       service:
         name: docker
         state: started
@@ -23,7 +49,7 @@
         ports:
           - "9000:9000"
 
-- name: Install Trivy on master
+- name: Install Trivy
   hosts: master
   become: yes
   tasks:
@@ -42,7 +68,7 @@
         url: https://aquasecurity.github.io/trivy-repo/deb/public.key
         state: present
 
-    - name: Add Trivy repo to sources list
+    - name: Add Trivy APT repository
       apt_repository:
         repo: "deb https://aquasecurity.github.io/trivy-repo/deb {{ ansible_lsb.codename }} main"
         state: present
